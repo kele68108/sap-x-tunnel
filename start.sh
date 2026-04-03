@@ -2,13 +2,13 @@
 set -e
 
 # =========================================================
-# SAP BAS / 本地沙盒 纯 Bash 隧道启动脚本 (变量直填版)
+# SAP BAS / 本地沙盒 纯 Bash 隧道启动脚本 (后台不死版)
 # =========================================================
 
 # 1. 变量直填区 (在这里直接写死你的配置)
 PORT="8080"
 X_TOKEN="kele666"
-ARGO_TOKEN="eyJhIjoiNTA0NmI1ODdjNmU0YmRhN2FlNTM2ZGZjZGVjM2M1NDkiLCJ0IjoiNTUyMGMwOGUtZDBhNS00ZjUxLTkxYjUtODg0NGE3NzYxN2I0IiwicyI6IllqQXhNR00wTnpJdFl6WXdZUzAwTkdKaUxUZ3lNREF0T0RSaE1UY3pNVFF6WXpOayJ9"   # <--- 请在这里填入你真实的 Token
+ARGO_TOKEN="eyJhIjoiNTA0NmI1ODdjNmU0YmRhN2FlNTM2ZGZjZGVjM2M1NDkiLCJ0IjoiNTUyMGMwOGUtZDBhNS00ZjUxLTkxYjUtODg0NGE3NzYxN2I0IiwicyI6IllqQXhNR00wTnpJdFl6WXdZUzAwTkdKaUxUZ3lNREF0T0RSaE1UY3pNVFF6WXpOayJ9"   
 
 # 内部端口，不用改
 INTERNAL_PORT=8880
@@ -18,9 +18,10 @@ if [ -z "$ARGO_TOKEN" ] || [ "$ARGO_TOKEN" == "这里填入你的Cloudflare_Tunn
     exit 1
 fi
 
-# 2. 启动极简 HTTP 服务，占用 $PORT 端口 (防止报错或探测)
+# 2. 启动极简 HTTP 服务，占用 $PORT 端口
+# 【修改点 1】：加上 nohup，并且屏蔽所有输出，让它彻底沉入后台
 echo "[SYSTEM] 启动 HTTP 健康检查探针，监听端口: $PORT"
-python3 -c "
+nohup python3 -c "
 import http.server, socketserver
 class Handler(http.server.BaseHTTPRequestHandler):
     def log_message(self, format, *args):
@@ -32,9 +33,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
 try:
     socketserver.TCPServer(('', $PORT), Handler).serve_forever()
 except Exception as e:
-    print(e)
-" &
-HTTP_PID=$!
+    pass
+" >/dev/null 2>&1 &
 
 # 3. 生成随机字符串用于临时文件名
 WORK_DIR="/tmp"
@@ -55,32 +55,26 @@ echo "[SYSTEM] 赋予执行权限..."
 chmod 755 "$XT_PATH" "$CF_PATH"
 
 # 5. 启动核心进程 (转入后台运行)
+# 【修改点 2】：加上 nohup，防止 SIGHUP 信号
 echo "[SYSTEM] 启动 X-Tunnel，监听本地端口: $INTERNAL_PORT"
-"$XT_PATH" -l "ws://127.0.0.1:${INTERNAL_PORT}" -token "$X_TOKEN" >/dev/null 2>&1 &
-XT_PID=$!
+nohup "$XT_PATH" -l "ws://127.0.0.1:${INTERNAL_PORT}" -token "$X_TOKEN" >/dev/null 2>&1 &
 
 echo "[SYSTEM] 启动 Cloudflare Argo Tunnel..."
-"$CF_PATH" tunnel --edge-ip-version auto run --token "$ARGO_TOKEN" >/dev/null 2>&1 &
-CF_PID=$!
+nohup "$CF_PATH" tunnel --edge-ip-version auto run --token "$ARGO_TOKEN" >/dev/null 2>&1 &
 
 # 6. 阅后即焚魔法
+# 【修改点 3】：让清理脚本也完全静默，避免 90 秒后在终端突然冒出一行字打断你敲代码
 (
-    sleep 90  # BAS里测试可以缩短一点时间，比如30秒后就删
-    echo "[SYSTEM] 触发阅后即焚，清理硬盘物理文件..."
+    sleep 90  
     rm -f "$XT_PATH" "$CF_PATH"
-    echo "[SYSTEM] 痕迹清理完毕，组件全内存运行中！"
-) &
+) >/dev/null 2>&1 &
 
-# 7. 优雅退出处理
-cleanup() {
-    echo ""
-    echo "[SYSTEM] 收到终止信号，准备清理退出..."
-    kill $XT_PID $CF_PID $HTTP_PID 2>/dev/null || true
-    echo "[SYSTEM] 进程已全部终止。"
-    exit 0
-}
-trap cleanup SIGTERM SIGINT
+# 【修改点 4】：删除了 trap 清理逻辑
+# 【修改点 5】：删除了 wait 挂起逻辑
 
-# 8. 挂起主进程
-echo "[SYSTEM] 所有服务均已在后台启动，按 Ctrl+C 可一键安全退出并清理。"
-wait $HTTP_PID $XT_PID $CF_PID
+# 7. 事了拂衣去
+echo "[SYSTEM] ========================================"
+echo "[SYSTEM] 所有服务已成功剥离并潜入后台运行！"
+echo "[SYSTEM] 脚本即将退出，您可以放心按下 Ctrl+C 或关闭终端了。"
+echo "[SYSTEM] ========================================"
+exit 0
