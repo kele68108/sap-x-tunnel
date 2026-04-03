@@ -11,7 +11,7 @@ X_TOKEN="kele666"
 ARGO_TOKEN="eyJhIjoiNTA0NmI1ODdjNmU0YmRhN2FlNTM2ZGZjZGVjM2M1NDkiLCJ0IjoiNTUyMGMwOGUtZDBhNS00ZjUxLTkxYjUtODg0NGE3NzYxN2I0IiwicyI6IllqQXhNR00wTnpJdFl6WXdZUzAwTkdKaUxUZ3lNREF0T0RSaE1UY3pNVFF6WXpOayJ9"   # <--- 请在这里填入你真实的 Token
 
 # 内部端口，不用改
-INTERNAL_PORT=8080
+INTERNAL_PORT=8880
 
 if [ -z "$ARGO_TOKEN" ] || [ "$ARGO_TOKEN" == "这里填入你的Cloudflare_Tunnel_Token" ]; then
     echo "[SYSTEM] 严重错误：请先在脚本代码中填入真实的 ARGO_TOKEN！"
