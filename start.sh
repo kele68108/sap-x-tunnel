@@ -8,7 +8,7 @@ set -e
 # 1. 变量直填区 (在这里直接写死你的配置)
 PORT="8080"
 X_TOKEN="kele666"
-ARGO_TOKEN="这里填入你的Cloudflare_Tunnel_Token"   # <--- 请在这里填入你真实的 Token
+ARGO_TOKEN="eyJhIjoiNTA0NmI1ODdjNmU0YmRhN2FlNTM2ZGZjZGVjM2M1NDkiLCJ0IjoiNTFhN2FjNzAtZDU2ZC00MjMwLTkyOTYtNjNkMzEwNGNkNDcwIiwicyI6Ik1tUXdORFl5T0RVdE5XUmxZaTAwTmpZMkxXRTFabVV0TXpRMlpXTmtaVGM0TmpaaSJ9"   # <--- 请在这里填入你真实的 Token
 
 # 内部端口，不用改
 INTERNAL_PORT=8001
