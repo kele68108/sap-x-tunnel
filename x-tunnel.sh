@@ -1,8 +1,7 @@
 #!/bin/bash
 
 # =========================================================
-# X-Tunnel 客户端管理脚本 (独立+多路复用调节版)
-# 新增功能：支持在面板中动态修改多路复用 (-n) 并发数
+# X-Tunnel 客户端管理脚本 (独立+多路复用调节+一键卸载版)
 # =========================================================
 
 GITHUB_BIN_URL="https://github.com/kele68108/sap-x-tunnel/raw/refs/heads/main/x-tunnel-linux-amd64"
@@ -75,7 +74,7 @@ load_instance_config() {
     CFG_SERVER=""
     CFG_LISTEN="socks5://0.0.0.0:30005"
     CFG_TOKEN=""
-    CFG_MUX="4" # 新增：默认并发连接数为 4
+    CFG_MUX="4"
 
     if [ -f "$CONF_FILE" ]; then
         source "$CONF_FILE"
@@ -366,6 +365,40 @@ batch_operation() {
     read -p "按回车继续..."
 }
 
+# --- 一键完全卸载函数 ---
+uninstall_all() {
+    clear
+    echo -e "${RED}====================================${PLAIN}"
+    echo -e "${RED}      警告：完全卸载 X-Tunnel${PLAIN}"
+    echo -e "${RED}====================================${PLAIN}"
+    echo -e "此操作将清除："
+    echo -e " 1. 所有实例及其配置文件"
+    echo -e " 2. 所有系统后台服务"
+    echo -e " 3. 核心二进制文件和快捷命令"
+    echo -e " 4. ${YELLOW}本脚本文件也会被自毁删除${PLAIN}"
+    echo ""
+    read -p "确定要彻底卸载吗？[y/n]: " choice
+    if [[ "$choice" == "y" || "$choice" == "Y" ]]; then
+        echo -e "${YELLOW}正在停止并删除所有后台服务...${PLAIN}"
+        systemctl stop x-tunnel-* 2>/dev/null
+        systemctl disable x-tunnel-* 2>/dev/null
+        rm -f /etc/systemd/system/x-tunnel-*.service
+        systemctl daemon-reload
+
+        echo -e "${YELLOW}正在清理核心文件和配置目录...${PLAIN}"
+        rm -f "$BIN_PATH"
+        rm -rf "$CONF_BASE_DIR"
+        rm -f "$SHORTCUT_CMD"
+
+        echo -e "${GREEN}卸载彻底完成！江湖再见！${PLAIN}"
+        rm -f "$0" # 脚本自毁
+        exit 0
+    else
+        echo -e "已取消卸载。"
+        sleep 1
+    fi
+}
+
 main_menu() {
     while true; do
         clear
@@ -375,10 +408,11 @@ main_menu() {
         echo -e " 1. 查看 / 管理实例"
         echo -e " 2. 新建实例"
         echo -e " 3. 批量停止 / 启动"
+        echo -e " 4. ${RED}一键完全卸载${PLAIN}"
         echo -e " ------------------------"
         echo -e " 0. 退出面板"
         echo ""
-        read -p "请选择 [0-3]: " main_choice
+        read -p "请选择 [0-4]: " main_choice
         
         case "$main_choice" in
             1) list_instances ;;
@@ -392,6 +426,7 @@ main_menu() {
                 fi
                 ;;
             3) batch_operation ;;
+            4) uninstall_all ;;
             0) exit 0 ;;
             *) echo "无效输入"; sleep 1 ;;
         esac
