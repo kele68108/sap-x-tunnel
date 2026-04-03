@@ -366,7 +366,7 @@ main_menu() {
     while true; do
         clear
         echo -e "${SKYBLUE}====================================${PLAIN}"
-        echo -e "${SKYBLUE}    X-Tunnel 客户端管理面板 (VPS)${PLAIN}"
+        echo -e "${SKYBLUE}    X-Tunnel 管理脚本 (Linux)${PLAIN}"
         echo -e "${SKYBLUE}====================================${PLAIN}"
         echo -e " 1. 查看 / 管理实例"
         echo -e " 2. 新建实例"
