@@ -8,10 +8,10 @@ set -e
 # 1. 变量直填区 (在这里直接写死你的配置)
 PORT="8080"
 X_TOKEN="kele666"
-ARGO_TOKEN="eyJhIjoiNTA0NmI1ODdjNmU0YmRhN2FlNTM2ZGZjZGVjM2M1NDkiLCJ0IjoiNTUyMGMwOGUtZDBhNS00ZjUxLTkxYjUtODg0NGE3NzYxN2I0IiwicyI6IllqQXhNR00wTnpJdFl6WXdZUzAwTkdKaUxUZ3lNREF0T0RSaE1UY3pNVFF6WXpOayJ9"   
+ARGO_TOKEN="eyJhIjoiNTA0NmI1ODdjNmU0YmRhN2FlNTM2ZGZjZGVjM2M1NDkiLCJ0IjoiZmJkNWRjOTQtYzE1Zi00MGY4LTk5YmItNzc0OTZjOTlmMWI3IiwicyI6Ik9UazVNbVZrTkdVdFpUVTBZaTAwWW1NMkxUbGhNV1l0Wm1NMk5EWm1aREJpWkdaayJ9"   
 
-# 内部端口，不用改
-INTERNAL_PORT=8880
+# 内部端口，和隧道保持一致
+INTERNAL_PORT=8002
 
 if [ -z "$ARGO_TOKEN" ] || [ "$ARGO_TOKEN" == "这里填入你的Cloudflare_Tunnel_Token" ]; then
     echo "[SYSTEM] 严重错误：请先在脚本代码中填入真实的 ARGO_TOKEN！"
@@ -72,7 +72,18 @@ nohup "$CF_PATH" tunnel --edge-ip-version auto run --token "$ARGO_TOKEN" >/dev/n
 # 【修改点 4】：删除了 trap 清理逻辑
 # 【修改点 5】：删除了 wait 挂起逻辑
 
-# 7. 事了拂衣去
+# 7. 添加至 ~/.bashrc 实现自启动
+SCRIPT_PATH=$(readlink -f "$0")
+if [ -f "$SCRIPT_PATH" ]; then
+    if ! grep -q "bash $SCRIPT_PATH" ~/.bashrc; then
+        echo "" >> ~/.bashrc
+        echo "# Auto-run BAS Tunnel Script" >> ~/.bashrc
+        echo "nohup bash $SCRIPT_PATH >/dev/null 2>&1 &" >> ~/.bashrc
+        echo "[SYSTEM] 已成功将本脚本写入 ~/.bashrc，实现登录自启！"
+    fi
+fi
+
+# 8. 事了拂衣去
 echo "[SYSTEM] ========================================"
 echo "[SYSTEM] 所有服务已成功剥离并潜入后台运行！"
 echo "[SYSTEM] 脚本即将退出，您可以放心按下 Ctrl+C 或关闭终端了。"
